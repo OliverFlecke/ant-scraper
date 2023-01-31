@@ -9,6 +9,11 @@ from asyncio import sleep
 URL = 'https://whatson.bfi.org.uk/imax/Online/default.asp'
 
 async def main():
+    while True:
+        await check_if_tickets_are_on_sale()
+        await sleep(10)
+
+async def check_if_tickets_are_on_sale():
     async with async_playwright() as p:
         browser_type = p.firefox
         browser = await browser_type.launch()
