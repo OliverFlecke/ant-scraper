@@ -7,11 +7,12 @@ from playwright.async_api import async_playwright
 from asyncio import sleep
 
 URL = 'https://whatson.bfi.org.uk/imax/Online/default.asp'
+DELAY_SEC = 1800 # 30 minutes = 60 seconds * 30
 
 async def main():
     while True:
         await check_if_tickets_are_on_sale()
-        await sleep(10)
+        await sleep(DELAY_SEC)
 
 async def check_if_tickets_are_on_sale():
     async with async_playwright() as p:
@@ -46,7 +47,7 @@ def send_email(content: str):
     msg = EmailMessage()
     msg.set_content(content)
     msg['From'] = outlook_email
-    msg['To'] = [outlook_email]
+    msg['To'] = [outlook_email, 'victorbjoerholm@gmail.com']
     msg['Subject'] = f'Are Ant-man tickets on sale yet?'
 
     server = smtplib.SMTP('smtp-mail.outlook.com', port=587)
