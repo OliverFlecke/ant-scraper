@@ -37,7 +37,6 @@ async def check_if_tickets_are_on_sale():
             print("Not on sale yet")
             send_email(f'No, they are still not on sale...\n\nYou can check here: {URL}')
 
-        await page.screenshot(path=f'example-{browser_type.name}.png')
         await browser.close()
 
 def send_email(content: str):
