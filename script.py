@@ -1,5 +1,8 @@
 #!/usr/bin/env python
+import os
 import asyncio
+import smtplib
+from email.message import EmailMessage
 from playwright.async_api import async_playwright
 from asyncio import sleep
 
@@ -23,11 +26,30 @@ async def main():
         day = frame.get_by_text('24')
         isAvailable = await day.get_attribute('class') != None
         if isAvailable:
-            print("tickets are on sale")
+            print("Tickets are on sale")
+            send_email(f'YES! Tickets are on sale now, go buy them immediately!\n\nYou can by them here: {URL}')
         else:
             print("Not on sale yet")
+            send_email(f'No, they are still not on sale...\n\nYou can check here: {URL}')
 
         await page.screenshot(path=f'example-{browser_type.name}.png')
         await browser.close()
+
+def send_email(content: str):
+    outlook_email = os.environ.get('OUTLOOK_EMAIL')
+    password = os.environ.get('OUTLOOK_PASSWORD')
+
+    msg = EmailMessage()
+    msg.set_content(content)
+    msg['From'] = outlook_email
+    msg['To'] = [outlook_email]
+    msg['Subject'] = f'Are Ant-man tickets on sale yet?'
+
+    server = smtplib.SMTP('smtp-mail.outlook.com', port=587)
+    server.ehlo()
+    server.starttls()
+    server.login(outlook_email, password)
+    server.send_message(msg)
+    server.quit()
 
 asyncio.run(main())
