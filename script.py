@@ -5,16 +5,37 @@ import smtplib
 from email.message import EmailMessage
 from playwright.async_api import async_playwright
 from asyncio import sleep
+from typing import List
 
 URL = 'https://whatson.bfi.org.uk/imax/Online/default.asp'
 DELAY_SEC = 1800 # 30 minutes = 60 seconds * 30
 
 async def main():
+    email = os.environ.get('OUTLOOK_EMAIL')
+    email_password = os.environ.get('OUTLOOK_PASSWORD')
+    receivers = os.environ.get('RECEIVERS')
+
+    if not email or not email_password or not receivers:
+        print('Either email or password is missing')
+        return
+
     while True:
-        await check_if_tickets_are_on_sale()
+        if await check_if_tickets_are_on_sale():
+            print("Tickets are on sale")
+            send_email(email, 
+                       email_password, 
+                       [email, receivers], 
+                       f'YES! Tickets are on sale now, go buy them immediately!\n\nYou can by them here: {URL}')
+        else:
+            print("Not on sale yet")
+            send_email(email,
+                       email_password,
+                       [receivers], 
+                       f'No, they are still not on sale...\n\nYou can check here: {URL}')
+
         await sleep(DELAY_SEC)
 
-async def check_if_tickets_are_on_sale():
+async def check_if_tickets_are_on_sale() -> bool:
     async with async_playwright() as p:
         browser_type = p.firefox
         browser = await browser_type.launch()
@@ -31,29 +52,22 @@ async def check_if_tickets_are_on_sale():
 
         day = frame.get_by_text('24')
         isAvailable = await day.get_attribute('class') != None
-        if isAvailable:
-            print("Tickets are on sale")
-            send_email(f'YES! Tickets are on sale now, go buy them immediately!\n\nYou can by them here: {URL}')
-        else:
-            print("Not on sale yet")
-            send_email(f'No, they are still not on sale...\n\nYou can check here: {URL}')
 
         await browser.close()
 
-def send_email(content: str):
-    outlook_email = os.environ.get('OUTLOOK_EMAIL')
-    password = os.environ.get('OUTLOOK_PASSWORD')
+        return isAvailable
 
+def send_email(from_email: str, email_password: str, to_email: List[str], content: str):
     msg = EmailMessage()
     msg.set_content(content)
-    msg['From'] = outlook_email
-    msg['To'] = [outlook_email, 'victorbjoerholm@gmail.com']
+    msg['From'] = from_email
+    msg['To'] = to_email
     msg['Subject'] = f'Are Ant-man tickets on sale yet?'
 
     server = smtplib.SMTP('smtp-mail.outlook.com', port=587)
     server.ehlo()
     server.starttls()
-    server.login(outlook_email, password)
+    server.login(from_email, email_password)
     server.send_message(msg)
     server.quit()
 
