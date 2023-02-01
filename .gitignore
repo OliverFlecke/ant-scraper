@@ -174,3 +174,4 @@ poetry.toml
 
 *.png
 .envrc
+.vscode/

@@ -7,33 +7,42 @@ from playwright.async_api import async_playwright
 from asyncio import sleep
 from typing import List
 
-URL = 'https://whatson.bfi.org.uk/imax/Online/default.asp'
-DELAY_SEC = 1800 # 30 minutes = 60 seconds * 30
+URL = "https://whatson.bfi.org.uk/imax/Online/default.asp"
+DELAY_SEC = 1800  # 30 minutes = 60 seconds * 30
+
 
 async def main():
-    email = os.environ.get('OUTLOOK_EMAIL')
-    email_password = os.environ.get('OUTLOOK_PASSWORD')
-    receivers = os.environ.get('RECEIVERS')
+    email = os.environ.get("OUTLOOK_EMAIL")
+    email_password = os.environ.get("OUTLOOK_PASSWORD")
+    receivers = os.environ.get("RECEIVERS")
 
     if not email or not email_password or not receivers:
-        print('Either email or password is missing')
+        print("Either email or password is missing")
         return
 
     while True:
-        if await check_if_tickets_are_on_sale():
-            print("Tickets are on sale")
-            send_email(email, 
-                       email_password, 
-                       [email, receivers], 
-                       f'YES! Tickets are on sale now, go buy them immediately!\n\nYou can by them here: {URL}')
-        else:
-            print("Not on sale yet")
-            send_email(email,
-                       email_password,
-                       [receivers], 
-                       f'No, they are still not on sale...\n\nYou can check here: {URL}')
+        try:
+            if await check_if_tickets_are_on_sale():
+                print("Tickets are on sale")
+                send_email(
+                    email,
+                    email_password,
+                    [email, receivers],
+                    f"YES! Tickets are on sale now, go buy them immediately!\n\nYou can by them here: {URL}",
+                )
+            else:
+                print("Not on sale yet")
+                send_email(
+                    email,
+                    email_password,
+                    [receivers],
+                    f"No, they are still not on sale...\n\nYou can check here: {URL}",
+                )
+        except Exception as e:
+            print(str(e))
 
         await sleep(DELAY_SEC)
+
 
 async def check_if_tickets_are_on_sale() -> bool:
     async with async_playwright() as p:
@@ -41,34 +50,39 @@ async def check_if_tickets_are_on_sale() -> bool:
         browser = await browser_type.launch()
         page = await browser.new_page()
         await page.goto(URL)
-        frame = page.frame_locator('#calendar-widget-frame')
-        month = frame.get_by_text('February 2023')
+        frame = page.frame_locator("#calendar-widget-frame")
+        month = frame.get_by_text("February 2023")
+        await sleep(1)
+
         while not await month.is_visible():
-            button = frame.get_by_title('Next month')
+            print("Feburary not visible")
+            button = frame.get_by_title("Next month")
             await button.click()
             await sleep(1)
-            frame = page.frame_locator('#calendar-widget-frame')
-            month = frame.get_by_text('February 2023')
+            frame = page.frame_locator("#calendar-widget-frame")
+            month = frame.get_by_text("February 2023")
 
-        day = frame.get_by_text('24')
-        isAvailable = await day.get_attribute('class') != None
+        day = frame.get_by_text("24")
+        isAvailable = await day.get_attribute("class") != None
 
         await browser.close()
 
         return isAvailable
 
+
 def send_email(from_email: str, email_password: str, to_email: List[str], content: str):
     msg = EmailMessage()
     msg.set_content(content)
-    msg['From'] = from_email
-    msg['To'] = to_email
-    msg['Subject'] = f'Are Ant-man tickets on sale yet?'
+    msg["From"] = from_email
+    msg["To"] = to_email
+    msg["Subject"] = f"Are Ant-man tickets on sale yet?"
 
-    server = smtplib.SMTP('smtp-mail.outlook.com', port=587)
+    server = smtplib.SMTP("smtp-mail.outlook.com", port=587)
     server.ehlo()
     server.starttls()
     server.login(from_email, email_password)
     server.send_message(msg)
     server.quit()
+
 
 asyncio.run(main())
