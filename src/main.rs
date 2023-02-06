@@ -16,7 +16,13 @@ async fn main() -> WebDriverResult<()> {
     let email_options = EmailOptions::create_from_environment();
     match email_options {
         Ok(opts) => {
-            send_email(&opts);
+            if check_if_tickets_are_on_sale().await? {
+                println!("Tickets ARE on sale");
+                send_email(&opts);
+            } else {
+                println!("Tickts not on sale :(");
+                send_email(&opts);
+            }
         }
         Err(e) => {
             panic!("Email options missing: {:?}", e);
