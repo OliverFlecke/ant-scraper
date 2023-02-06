@@ -82,6 +82,7 @@ fn send_email(options: &EmailOptions) {
 async fn check_if_tickets_are_on_sale() -> WebDriverResult<bool> {
     let mut caps = DesiredCapabilities::chrome();
     caps.set_headless()?;
+    caps.set_no_sandbox()?;
     let driver = WebDriver::new("http://localhost:9515", caps).await?;
 
     driver.goto(URL).await?;

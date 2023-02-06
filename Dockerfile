@@ -29,12 +29,15 @@ RUN apt-get install -y \
     libcurl3-nss \
     libcurl4
 
-RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-RUN dpkg -i google-chrome-stable_current_amd64.deb
+# RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O chrome.deb
+RUN wget -q https://dl.google.com/linux/deb/pool/main/g/google-chrome-beta/google-chrome-beta_110.0.5481.77-1_amd64.deb -O chrome.deb
+RUN dpkg -i chrome.deb 
 RUN apt -f install -y
+RUN rm chrome.deb
 
 WORKDIR /deps
 RUN wget -q https://chromedriver.storage.googleapis.com/110.0.5481.30/chromedriver_linux64.zip
+# RUN wget -q https://chromedriver.storage.googleapis.com/109.0.5414.25/chromedriver_linux64.zip
 RUN apt-get install -y unzip
 RUN unzip chromedriver_linux64.zip
 
@@ -51,11 +54,15 @@ RUN rm src/*.rs
 COPY ./src/ ./src
 RUN cargo build --release -Z sparse-registry
 
-FROM base
+# Final image to contain the application, with chrome and chromedriver installed.
+FROM base AS final
 
 WORKDIR /app
 COPY --from=build /app/target/release/antscraper .
 COPY start.sh .
 
+ENV EMAIL=''
+ENV EMAIL_PASSWORD=''
+ENV EMAIL_SERVER=''
+
 CMD ["/app/start.sh"]
-# CMD ["/deps/chromedriver", "&& ./antscraper"]

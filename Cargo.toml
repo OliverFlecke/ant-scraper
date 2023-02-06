@@ -4,7 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# lettre = { version = "0.10.2", features = ["native-tls", "tokio1-native-tls", "tokio1"] }
-lettre = { version = "0.10.2" }
+lettre = { version = "0.10.2", default-features = false, features = [
+  "smtp-transport",
+  "pool",
+  "hostname",
+  "builder",
+  "rustls-tls",
+  "tokio1-rustls-tls",
+] }
 thirtyfour = "0.31.0"
 tokio = { version = "1.25.0", features = ["full"] }
